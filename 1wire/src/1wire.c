@@ -26,7 +26,7 @@ int main() {
     char presentDev[] = "/home/pi/present_devices.txt";
     FILE* fdevs;
 
-    printf("Updating file: %s", presentDev);
+    printf("Updating file: %s \n", presentDev);
 
     while(loop) {
         fslaves = fopen(busSlaves, "r");
