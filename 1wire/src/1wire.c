@@ -26,6 +26,8 @@ int main() {
     char presentDev[] = "/home/pi/present_devices.txt";
     FILE* fdevs;
 
+    char lastDevice = "2d-00003e07da1b";
+
     printf("Updating file: %s \n", presentDev);
 
     while(loop) {
@@ -41,15 +43,26 @@ int main() {
         fclose(fslaves);
 
         //TODO: Test with 25 devices on line
-        fsearch = fopen(busSearch, "w");
-        fprintf(fsearch, "1");
-        fclose(fsearch);
-        usleep(400000); 
+        
 
+        
         fsearch = fopen(busSearch, "w");
         fprintf(fsearch, "1");
         fclose(fsearch);
-        usleep(400000);
+        
+        int cnt = 0;
+        int searchAgain = TRUE;
+        while(searchAgain || cnt > 1000000){
+            cnt++;
+            fslaves = fopen(busSlaves, "r");
+            while(getline(&line, &len, fslaves) != -1 ){}
+            if(!strcmp(line, lastDevice)){
+                searchAgain = FALSE;
+            }
+        }
+
+
+    
 
         fslaves = fopen(busSlaves, "r");
         fdevs = fopen(presentDev, "w");
