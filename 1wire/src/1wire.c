@@ -1,12 +1,17 @@
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 #include "1wire.h"
 
 #define TRUE 1
 #define FALSE 0
 
+int loop = TRUE;
+
 int main() {
+    signal(SIGINT, INThandler);
+
     printf("Hello world\n");
 
     char busSearch[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_search";
@@ -20,7 +25,7 @@ int main() {
     char presentDev[] = "/home/pi/present_devices.txt";
     FILE* fdevs;
 
-    //while(FALSE) {
+    while(loop) {
         fslaves = fopen(busSlaves, "r");
         char* line;
         size_t len;
@@ -44,7 +49,7 @@ int main() {
         usleep(400000);
 
         fslaves = fopen(busSlaves, "r");
-        fdevs = fopen(presentDev, "r");
+        fdevs = fopen(presentDev, "w");
         while(getline(&line, &len, fslaves) != -1 ){
             printf(line);
             fprintf(fdevs, "%s", line);
@@ -52,8 +57,13 @@ int main() {
         fclose(fslaves);
         fclose(fdevs);
 
-    //}
+    };
+    exit(0);
 };
 
+void INThandler(int sig){
+    printf("Goodbye ;)");
+    loop = FALSE;
+}
 
 
