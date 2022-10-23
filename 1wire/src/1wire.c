@@ -22,11 +22,21 @@ int main() {
         char* line;
         size_t len;
 
-        while(getline(&line, &len, fslaves) != -1 ){
+        while(getline(&line, &len, fslaves) != -1 ){ //Removes all devices from bus
             fremove = fopen(busRemove, "w");
             fprintf(fremove, "%s", line);
             fclose(fremove);
         }
+        fclose(fslaves);
+
+        fsearch = fopen(busSearch, "w");
+        fprintf(fsearch, "1");
+
+        fslaves = fopen(busSlaves, "r");
+        while(getline(&line, &len, fslaves) != -1 ){
+            printf(line);
+        }
+        fclose(fslaves);
 
     //}
 

@@ -11,7 +11,7 @@ LDFLAGS =
 APPNAME = 1wire
 EXT = .c
 SRCDIR = src/.
-OBJDIR = obj/
+OBJDIR = obj/.
 
 ############## Do not change anything from here downwards! #############
 SRC = $(wildcard $(SRCDIR)/*$(EXT))
