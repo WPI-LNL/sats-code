@@ -52,7 +52,7 @@ int main() {
         
         int cnt = 0;
         int searchAgain = TRUE;
-        while(searchAgain || cnt > 1000000){
+        while(searchAgain && cnt < 1000){
             cnt++;
             fslaves = fopen(busSlaves, "r");
             while(getline(&line, &len, fslaves) != -1 ){}
