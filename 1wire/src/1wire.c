@@ -26,7 +26,7 @@ int main() {
     char presentDev[] = "/home/pi/present_devices.txt";
     FILE* fdevs;
 
-    char lastDevice = "2d-00003e07da1b";
+    char lastDevice[] = "2d-00003e07da1b";
 
     printf("Updating file: %s \n", presentDev);
 
