@@ -65,7 +65,7 @@ int main() {
 };
 
 void INThandler(int sig){
-    printf("Goodbye ;)");
+    printf("Goodbye ;) \n");
     loop = FALSE;
 }
 
