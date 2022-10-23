@@ -17,6 +17,9 @@ int main() {
     FILE* fremove;
     FILE* fslaves;
 
+    char presentDev[] = "/home/pi/present_devices.txt";
+    FILE* fdevs;
+
     //while(FALSE) {
         fslaves = fopen(busSlaves, "r");
         char* line;
@@ -29,16 +32,25 @@ int main() {
         }
         fclose(fslaves);
 
+        //TODO: Test with 25 devices on line
         fsearch = fopen(busSearch, "w");
         fprintf(fsearch, "1");
+        fclose(fsearch);
+        usleep(400000); 
 
-        usleep(1000);
-        
+        fsearch = fopen(busSearch, "w");
+        fprintf(fsearch, "1");
+        fclose(fsearch);
+        usleep(400000);
+
         fslaves = fopen(busSlaves, "r");
+        fdevs = fopen(presentDev, "r");
         while(getline(&line, &len, fslaves) != -1 ){
             printf(line);
+            fprintf(fdevs, "%s", line);
         }
         fclose(fslaves);
+        fclose(fdevs);
 
     //}
 };
