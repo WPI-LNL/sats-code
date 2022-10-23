@@ -26,7 +26,7 @@ int main() {
     char presentDev[] = "/home/pi/present_devices.txt";
     FILE* fdevs;
 
-    char lastDevice[] = "2d-00003e07da1b";
+    char lastDevice[] = "2d-00003e07da1b\n";
 
     printf("Updating file: %s \n", presentDev);
 
@@ -51,6 +51,7 @@ int main() {
         fclose(fsearch);
         
         int cnt = 0;
+        line = 0x0;
         int searchAgain = TRUE;
         while(searchAgain && cnt < 1000){
             cnt++;
