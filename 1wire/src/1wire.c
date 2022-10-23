@@ -13,7 +13,7 @@ int loop = TRUE;
 int main() {
     signal(SIGINT, INThandler);
 
-    printf("Hello world\n");
+    //printf("Hello world\n");
 
     char busSearch[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_search";
     char busRemove[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_remove";
@@ -25,6 +25,8 @@ int main() {
 
     char presentDev[] = "/home/pi/present_devices.txt";
     FILE* fdevs;
+
+    printf("Updating file: %s", presentDev);
 
     while(loop) {
         fslaves = fopen(busSlaves, "r");
@@ -52,7 +54,7 @@ int main() {
         fslaves = fopen(busSlaves, "r");
         fdevs = fopen(presentDev, "w");
         while(getline(&line, &len, fslaves) != -1 ){
-            printf(line);
+            //printf(line);
             fprintf(fdevs, "%s", line);
         }
         fclose(fslaves);
