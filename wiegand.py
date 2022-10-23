@@ -87,7 +87,7 @@ class decoder:
                self.pi.set_watchdog(self.gpio_1, 0)
                self.in_code = False
                self.callback(self.bits, self.num)
-               cancel(self)
+               self.cancel()
 
    def cancel(self):
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
    w = wiegand.decoder(pi, 14, 15, callback)
 
-   time.sleep(300)
+   time.sleep(10)
 
    w.cancel()
 
