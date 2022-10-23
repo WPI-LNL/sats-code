@@ -108,14 +108,14 @@ if __name__ == "__main__":
 
    def callback(bits, value):
       print("bits={} value={}".format(bits, value))
-      
+      exit(0)
       return (bits, value)
 
    pi = pigpio.pi()
 
    w = wiegand.decoder(pi, 14, 15, callback)
 
-   time.sleep(10)
+   time.sleep(300)
 
    w.cancel()
 
