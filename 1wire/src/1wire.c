@@ -32,6 +32,8 @@ int main() {
         fsearch = fopen(busSearch, "w");
         fprintf(fsearch, "1");
 
+        usleep(1000);
+        
         fslaves = fopen(busSlaves, "r");
         while(getline(&line, &len, fslaves) != -1 ){
             printf(line);
@@ -39,8 +41,6 @@ int main() {
         fclose(fslaves);
 
     //}
-
-    printf("%s + \n", busSearch);
 };
 
 
