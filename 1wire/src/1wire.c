@@ -8,15 +8,14 @@
 #define TRUE 1
 #define FALSE 0
 
+char busSearch[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_search"; // Path to search control file
+char busRemove[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_remove"; // Path to slave remove file
+char busSlaves[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves"; // Path to slave list file
+
 int loop = TRUE;
 
 int main() {
     signal(SIGINT, INThandler);
-
-
-    char busSearch[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_search"; // Path to search control file
-    char busRemove[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_remove"; // Path to slave remove file
-    char busSlaves[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves"; // Path to slave list file
 
     FILE* fsearch;
     FILE* fremove;
@@ -67,12 +66,13 @@ int main() {
 }
 
 void blockingSearch() {
+    FILE* fsearch;
     fsearch = fopen(busSearch, "w"); // open bus search file
     fprintf(fsearch, "1");          // trigger a search
     fclose(fsearch);
-    
+    char* line = 0x0;
+    size_t len;
     int iter_count = 0;
-    line = 0x0;
     int searchAgain = TRUE;
     while(searchAgain && iter_count++ < 10){ // search til device found or 0.5s pass
         usleep(50000); // sleep 50ms
