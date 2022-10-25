@@ -38,49 +38,52 @@ int main() {
             fremove = fopen(busRemove, "w"); // open file for writing
             fprintf(fremove, "%s", line);   // write EEPROM ID to remove
             fclose(fremove);                // close file
+            free(line);
         }
+        free(line);
         fclose(fslaves);
 
         //TODO: Test with 25 devices on line
         
 
-        
-        fsearch = fopen(busSearch, "w"); // open bus search file
-        fprintf(fsearch, "1");          // trigger a search
-        fclose(fsearch);
-        
-        int iter_count = 0;
-        line = 0x0;
-        int searchAgain = TRUE;
-        while(searchAgain && iter_count++ < 5){ // search til device found or 0.5s pass
-            usleep(100000); // sleep 100ms
-            fsearch = fopen(busSearch, "r");
-            getline(&line, &len, fsearch);
-            if(!strcmp(line, "0")) {
-                searchAgain = FALSE;
-            }/*
-            fslaves = fopen(busSlaves, "r"); // open slave list file
-            while(getline(&line, &len, fslaves) != -1 ){} // read to the end
-            if(!strcmp(line, lastDevice)){ // if the last device is found, we assume search is done
-                searchAgain = FALSE;
-            }*/
-        }
+        blockingSearch(); // 3 of these seems to be enough to get it consistently?
+        blockingSearch();
+        blockingSearch();
 
-        //TODO trigger another search?
-    
 
         fslaves = fopen(busSlaves, "r");    // open the slave list file
         fdevs = fopen(presentDev, "w");     // open the Python eeprom list file
         while(getline(&line, &len, fslaves) != -1 ){
             //printf(line);
             fprintf(fdevs, "%s", line); // copy the EEPROMs into the python list file
+            free(line);
         }
+        free(line);
         fclose(fslaves);
         fclose(fdevs);
 
     };
     exit(0);
-};
+}
+
+void blockingSearch() {
+    fsearch = fopen(busSearch, "w"); // open bus search file
+    fprintf(fsearch, "1");          // trigger a search
+    fclose(fsearch);
+    
+    int iter_count = 0;
+    line = 0x0;
+    int searchAgain = TRUE;
+    while(searchAgain && iter_count++ < 10){ // search til device found or 0.5s pass
+        usleep(50000); // sleep 50ms
+        fsearch = fopen(busSearch, "r");
+        getline(&line, &len, fsearch);
+        if(!strcmp(line, "0\n")) {
+            searchAgain = FALSE;
+        }
+        free(line);
+    }
+}
 
 void INThandler(int sig){
     printf("Goodbye ;) \n");
