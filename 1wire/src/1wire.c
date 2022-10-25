@@ -54,11 +54,16 @@ int main() {
         int searchAgain = TRUE;
         while(searchAgain && iter_count++ < 5){ // search til device found or 0.5s pass
             usleep(100000); // sleep 100ms
+            fsearch = fopen(busSearch, "r");
+            getline(&line, &len, fsearch);
+            if(!strcmp(line, "0")) {
+                searchAgain = FALSE;
+            }/*
             fslaves = fopen(busSlaves, "r"); // open slave list file
             while(getline(&line, &len, fslaves) != -1 ){} // read to the end
             if(!strcmp(line, lastDevice)){ // if the last device is found, we assume search is done
                 searchAgain = FALSE;
-            }
+            }*/
         }
 
         //TODO trigger another search?
