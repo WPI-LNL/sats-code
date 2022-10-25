@@ -38,6 +38,7 @@ int main() {
             fprintf(fremove, "%s", line);   // write EEPROM ID to remove
             fclose(fremove);                // close file
             free(line);
+            line = NULL;
         }
         fclose(fslaves);
 
@@ -55,6 +56,7 @@ int main() {
             //printf(line);
             fprintf(fdevs, "%s", line); // copy the EEPROMs into the python list file
             free(line);
+            line = NULL;
         }
         fclose(fslaves);
         fclose(fdevs);
@@ -68,12 +70,12 @@ void blockingSearch() {
     fsearch = fopen(busSearch, "w"); // open bus search file
     fprintf(fsearch, "1");          // trigger a search
     fclose(fsearch);
-    char* line = 0x0;
     size_t len;
     int iter_count = 0;
     int searchAgain = TRUE;
     while(searchAgain && iter_count++ < 10){ // search til device found or 0.5s pass
         usleep(50000); // sleep 50ms
+        char* line = NULL;
         fsearch = fopen(busSearch, "r");
         getline(&line, &len, fsearch);
         if(!strcmp(line, "0\n")) {
