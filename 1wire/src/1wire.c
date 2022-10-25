@@ -39,7 +39,6 @@ int main() {
             fclose(fremove);                // close file
             free(line);
         }
-        free(line);
         fclose(fslaves);
 
         //TODO: Test with 25 devices on line
@@ -57,7 +56,6 @@ int main() {
             fprintf(fdevs, "%s", line); // copy the EEPROMs into the python list file
             free(line);
         }
-        free(line);
         fclose(fslaves);
         fclose(fdevs);
 
