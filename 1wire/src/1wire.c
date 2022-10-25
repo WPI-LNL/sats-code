@@ -80,6 +80,7 @@ void blockingSearch() {
             searchAgain = FALSE;
         }
         free(line);
+        fclose(fsearch);
     }
 }
 
