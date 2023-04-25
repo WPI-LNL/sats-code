@@ -1,6 +1,8 @@
 import tkinter as tk
 import customtkinter as ctk
 from time import strftime
+import qrcode
+from qrcode.image.pil import PilImage
 
 # CONSTANTS
 BIG_FONT = ("Arial", 64)
@@ -66,6 +68,11 @@ class MainWindow(ctk.CTk):
         prompt = ctk.CTkLabel(self, text=text, fg_color=("gray85", "gray15"), text_color="black", corner_radius=5, pady=20, padx=20, font=HEADER_FONT)
         prompt.grid(row=3, column=1, padx=20, pady=10, sticky="s")
         return prompt
+    
+    def init_center_text(self, text = None, size = BIG_FONT[0], text_color = ("pale goldenrod", "dark goldenrod")):    
+        center_text = ctk.CTkLabel(self, text=text, fg_color="pale goldenrod", text_color="black", corner_radius=5, pady=20, padx=20, font=BIG_FONT)
+        center_text.grid(row=1, column=1, padx=20, pady=10, sticky="s")
+        return center_text
 
     def init_top_header(self, text = None):
         header = ctk.CTkLabel(self, text=text, fg_color=("gray85", "gray15"), text_color="black", corner_radius=5, pady=10, padx=25, font=STATUS_FONT)
@@ -73,10 +80,12 @@ class MainWindow(ctk.CTk):
         return header
 
 class IdleWindow(MainWindow):
-    def __init__(self):
+    def __init__(self, top_text = "Small Asset Tracking System", center_text = None, bottom_text = "Scan WPI ID to begin"):
         super().__init__()
-        self.top_header = super().init_top_header("Small Asset Tracking System")
-        self.bottom_prompt = super().init_bottom_prompt("Scan WPI ID to begin")
+        if top_text: self.top_header = super().init_top_header("Small Asset Tracking System")
+        if center_text: self.center_text = super().init_center_text(center_text)
+        if bottom_text: self.bottom_prompt = super().init_bottom_prompt(bottom_text)
+
 
 class LoadingWindow(MainWindow):
     def __init__(self):
@@ -86,10 +95,22 @@ class LoadingWindow(MainWindow):
         self.progress = ctk.CTkProgressBar(self, fg_color=("gray85", "gray15"), corner_radius=15, mode="indeterminate", height=30, width=600)
         self.progress.grid(row=1, column=1, padx=20, pady=10, sticky="s")
         self.progress.start()
-        
+
+class QRWindow(MainWindow):
+    def __init__(self, url, bottom_text = "Scan QR Code to begin"):
+        super().__init__()
+        self.dark_image =  qrcode.make(url, image_factory=PilImage, fill_color="black", back_color="white")._img
+        self.light_image =  qrcode.make(url, image_factory=PilImage, fill_color="black", back_color="white")._img
+        self.top_header = super().init_top_header("Small Asset Tracking System")
+        if bottom_text: self.prompt = super().init_bottom_prompt(bottom_text)
+        self.qrcode = ctk.CTkImage(size=(300,300), light_image = self.light_image, dark_image = self.dark_image)
+        center_image = ctk.CTkLabel(self, text=None, image=self.qrcode, fg_color="pale goldenrod", corner_radius=5, pady=20, padx=20, font=BIG_FONT)
+        center_image.grid(row=1, column=1, padx=20, pady=10, sticky="s")
+
+
 
 if __name__ == "__main__":
-    app = LoadingWindow()
+    app = QRWindow("www.google.com")
     # app.bind("<Button-1>", LoadingWindow())
     app.mainloop()
 
