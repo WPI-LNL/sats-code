@@ -1,6 +1,10 @@
 {
     "cSpell.words": [
         "customtkinter",
+        "rescan",
         "tkfontawesome"
+    ],
+    "cSpell.ignoreWords": [
+        "qrcode"
     ]
 }
