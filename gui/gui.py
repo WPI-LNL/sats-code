@@ -159,13 +159,13 @@ class PortWidget(ctk.CTkButton):
         self.asset_removed()
     
     def searching(self):
-        self.configure(fg_color = COLOR.ASSET_SYNC_BG, text = "Searching...")
+        self.configure(fg_color = COLOR.ASSET_SYNC_BG, hover_color = "blue", text = "Searching...")
     
     def asset_added(self, asset):
-        self.configure(fg_color = COLOR.ASSET_IN_BG, text = str(asset))
+        self.configure(fg_color = COLOR.ASSET_IN_BG, hover_color = "green", text = str(asset))
 
     def asset_removed(self):
-        self.configure(fg_color = COLOR.ASSET_OUT_BG, text = "")
+        self.configure(fg_color = COLOR.ASSET_OUT_BG, hover_color = "grey", text = "")
     
     def on_click(self):
         pass # TODO: Implement port/asset info page

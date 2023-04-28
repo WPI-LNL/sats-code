@@ -37,6 +37,8 @@ class Main(StateMachine):
     add_unknown_asset = door_open.to(unknown_asset_added)
     asset_registration = unknown_asset_added.to(register_unknown_asset)
 
+    test_asset_list = [Asset(None, "Asset " + str(i), i, None) for i in range(20)]
+
     windows = {
             door_closed.name: MessageWindow(bottom_text="Scan WPI ID to begin"),
             door_forced_open.name: MessageWindow(center_text="Close door\nto proceed", bottom_text="Door Forced"),
@@ -45,7 +47,7 @@ class Main(StateMachine):
             register_user.name: QRWindow(bottom_text="Scan QR Code to register WPI ID"),
             user_rescan.name: MessageWindow(center_text="Please rescan WPI ID", bottom_text="Unable to read WPI ID"),
             user_no_permission.name: MessageWindow(center_text="Unauthorized\nContact Webmaster for access", bottom_text="User does not have permission to open door"),
-            door_open.name: MessageWindow(center_text="Door Open"),
+            door_open.name: AssetWindow(test_asset_list, presence_list = [1 for i in range(20)]),
             asset_removed.name: MessageWindow(center_text="Asset Removed"),
             known_asset_added.name: MessageWindow(center_text="Asset Added"),
             unknown_asset_added.name: MessageWindow(center_text="Unknown Asset Added", bottom_text="Tap anywhere to register new asset"),
@@ -85,7 +87,9 @@ if __name__ == "__main__":
     db_interop = DB_Interop()
     hardware_interop = Hardware_Interop()
 
+    
+
     main.windows[main.door_closed.name].bind("<Return>", lambda event: main.id_scan())
     main.windows[main.loading_user.name].bind("<Return>", lambda event: main.user_lookup_success())
-    main.windows[main.door_open.name].bind("<Return>", lambda event: main.add_known_asset())
+    main.windows[main.door_open.name].bind("<Return>", lambda event: main.windows[main.door_open.name].update([0,0,0,0]+ [Asset(None, "Asset " + str(i), i, None) for i in range(4,16)] + [0,0,0,0], [1 for i in range(16)]+[0,0,0,0]))
     main.currentWindow().mainloop()
