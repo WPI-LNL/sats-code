@@ -77,7 +77,7 @@ class MainWindow(ctk.CTkToplevel):
         self.withdraw()
 
     def update_time(self):
-        self.status_bar.time_display.configure(text=strftime('%H:%M %p'))
+        self.status_bar.time_display.configure(text=strftime('%-I:%M %p'))
         self.after(60 * 1000, self.update_time)
 
     def close(self, event=None):
