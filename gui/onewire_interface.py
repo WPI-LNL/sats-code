@@ -2,10 +2,12 @@
 
 
 # sets a function to be used as the callback (i.e. the driver will call it when a device is changed)
-# callback should have a list of tuples as the argument; it will be invoked with a list of changes
-# since the last invocation in the form of [(UID, 0), (UID, 1)...] where a 1 represents an inserted fob
-# and a 0 represents a removed fob
-def registerCallback(callback):
+# Callback is called with int and str: int is the slot number, str is the UID of the device
+def registerCallback_UpdateSlot(callback):
+    pass
+
+# Callback is called with single string argument: "NOMINAL", "REINSERT_LAST", or "REINSERT_ALL"
+def registerCallback_HardwareStateChange(callback):
     pass
 
 # return 20-element list of UIDs for present fobs, or 0 for empty slots
