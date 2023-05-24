@@ -3,6 +3,9 @@
 import pigpio
 import asyncio
 
+WIEGAND_0 = 18
+WIEGAND_1 = 23
+
 class decoder:
 
     """
@@ -144,7 +147,6 @@ if __name__ == "__main__":
 """
 
 def callback(bits, value, callback_func):
-    print(f"~Internal callback: {bits} val: {value}")
     if bits != 35: # read error not right number of bits
         callback_func(None)
     else:
@@ -156,10 +158,7 @@ async def run_with_callback(callback_func):
     import wiegand
 
     pi = pigpio.pi()
-    print("a")
-    w = wiegand.decoder(pi, 15, 18, callback, callback_func)
-    print("b")
+    w = wiegand.decoder(pi, WIEGAND_0, WIEGAND_1, callback, callback_func)
     await time.sleep(10**8)
-    print("c")
     w.cancel()
     pi.stop()
