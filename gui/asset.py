@@ -1,15 +1,21 @@
 from datetime import datetime
+from typing_extensions import override
 
 from db_interop import DB_Interop, AssetStatus
 
 class Asset:
     def __init__(self, id: str, display_name: str, position: int, last_seen: datetime):
         self.id = id
-        self.display_name = display_name
         self.position = position
-        self.last_seen_datetime = last_seen
+        self.last_seen_datetime = last_seen if last_seen else datetime.now()
         self.status = lambda: AssetStatus.IN if self.position else AssetStatus.OUT if self.display_name else AssetStatus.UNKNOWN
         self.last_seen = lambda: datetime.now() if self.position else self.last_seen_datetime
+        
+        db_asset = DB_Interop.get_asset(id)
+        if db_asset.status_code != 200:
+            DB_Interop.create_asset(id, position, self.last_seen, self.status)
+        else:
+            self.display_name = db_asset["asset_display_name"]
 
     """def __init__(self,payload: dict):
         self.__init__(self, 
@@ -77,3 +83,28 @@ class AssetManager:
     def create_asset(self, id, position = None, last_seen = datetime.now()):
         self.assets.append(Asset(id, None, position, last_seen))
         DB_Interop.create_asset(id, position, last_seen, AssetStatus.UNKNOWN)
+
+class UnknownAsset(Asset):
+    def __init__(self, position: int):
+        self.position = position
+        self.id = None
+        self.last_seen_datetime = None
+        self.status = AssetStatus.UNKNOWN
+        self.last_seen = lambda: datetime.now()
+        self.display_name = "UNKNOWN"
+
+    @override
+    def __str__(self):
+        return self.display_name
+    
+    @override
+    def __int__(self):
+        return self.position
+    
+    @override
+    def hardware_update(self, position: int):
+        pass
+    
+    @override
+    def log(self):
+        pass

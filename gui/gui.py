@@ -4,6 +4,7 @@ from time import strftime
 import qrcode
 from qrcode.image.pil import PilImage
 from PIL import Image, ImageTk
+from slot import Slot, SlotManager
 
 # CONSTANTS
 class FONT():
@@ -114,7 +115,22 @@ class MessageWindow(MainWindow):
         if top_text: self.top_header = super().init_top_header("Small Asset Tracking System")
         if center_text: self.center_text = super().init_center_text(center_text)
         if bottom_text: self.bottom_prompt = super().init_bottom_prompt(bottom_text)
+        self.default_center_text = center_text
+        self.default_bottom_text = bottom_text
+    
+    def showCenterAlert(self, text, timeout = None, fg_color = "gold"):
+        self.center_text.configure(text=text, fg_color=fg_color)
+        if timeout: self.after(timeout, self.clearCenterAlert)
 
+    def clearCenterAlert(self):
+        self.center_text.configure(text=self.default_center_text, fg_color=("pale goldenrod", "dark goldenrod"))
+
+    def showBottomAlert(self, text, timeout = None, fg_color = "gold"):
+        self.bottom_prompt.configure(text=text, fg_color=fg_color)
+        if timeout: self.after(timeout, self.clearBottomAlert)
+
+    def clearBottomAlert(self):
+        self.bottom_prompt.configure(text=self.default_bottom_text, fg_color=("gray85", "gray15"))
 
 class LoadingWindow(MainWindow):
     def __init__(self):
@@ -147,10 +163,10 @@ class QRWindow(MainWindow):
         self.center_image = ctk.CTkLabel(self, text=None, image=self.qrcode, fg_color="pale goldenrod", corner_radius=5, pady=20, padx=20, font=FONT.BIG)
         self.center_image.grid(row=1, column=1, padx=20, pady=10, sticky="s")
 
-class PortWidget(ctk.CTkButton):
-    def __init__(self, m, port:int, *args, **kwargs):
+class SlotWidget(ctk.CTkButton):
+    def __init__(self, m, slot:int, *args, **kwargs):
         super().__init__(m, *args, **kwargs)
-        self.port = port
+        self.slot = slot
         self.configure(
             text_color="black",
             corner_radius=5,
@@ -168,13 +184,12 @@ class PortWidget(ctk.CTkButton):
         self.configure(fg_color = COLOR.ASSET_OUT_BG, hover_color = "grey", text = "")
     
     def on_click(self):
-        pass # TODO: Implement port/asset info page
+        pass # TODO: Implement slot/asset info page
 
-class AssetWindow(MainWindow):
-    def __init__(self, asset_list, presence_list):
+class SlotWindow(MainWindow):
+    def __init__(self, slot_manager):
         super().__init__()
-        self.asset_list = asset_list
-        self.presence_list = presence_list
+        self.slot_manager = slot_manager
         self.top_header = super().init_top_header("Small Asset Tracking System")
         self.bottom_prompt = super().init_bottom_prompt("Add or remove assets")
         self.button_frame = ctk.CTkFrame(self, fg_color=("gray95", "gray10"), corner_radius=0)
@@ -184,7 +199,7 @@ class AssetWindow(MainWindow):
         self.port_list = []
         for y in range(4):
             for x in range(5):
-                self.port_list.append(PortWidget(self.button_frame, y*5 + x))
+                self.port_list.append(SlotWidget(self.button_frame, y*5 + x))
                 if asset_list[y*5 + x]:
                     self.port_list[-1].asset_added(asset_list[y*5 + x])
                 elif presence_list[y*5 + x]:

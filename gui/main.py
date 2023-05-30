@@ -1,8 +1,11 @@
 from statemachine import StateMachine, State
 from hardware_interop import Hardware_Interop
 from db_interop import DB_Interop
-from asset import Asset, AssetManager
+from slot import Slot, SlotManager
 from gui import *
+
+_UNKNOWN_ASSET_ID = "UNK"
+_DEFAULT_ALERT_DURATION = 5 #seconds
 
 class Main(StateMachine):
     def __init__(self):
@@ -12,46 +15,67 @@ class Main(StateMachine):
     door_closed = State('Door Closed', initial=True) # Door closed, idle
     door_forced_open = State('Door Forced Open') # Door forced open
     loading_user = State('Loading User') # Loading user from API
-    user_not_found = State('User Not Found') # User not found in API
     register_user = State('User Registration') # User not found in API, TODO: Add QR code URL
-    user_rescan = State('User Rescan') # User invalid, rescan
-    user_no_permission = State('User No Permission') # User does not have permission to open
 
     door_open = State('Door Open') # Door open, waiting for interaction
-    asset_removed = State('Asset Removed') # Asset removed, waiting for interaction
-    known_asset_added = State('Known Asset Added') # Know asset added, waiting for interaction
-    unknown_asset_added = State('Unknown Asset Added') # Unknown asset added, waiting for interaction
     register_unknown_asset = State('Register New Asset') # Register new asset, waiting for interaction, TODO: Add QR code URL
 
-    close_door = door_open.to(door_closed)
+    reinsert_last = State('Reinsert Last') # Reinsert last asset(s), waiting for hardware validation
+    reinsert_all = State('Reinsert All') # Reinsert all asset(s), waiting for hardware validation
+
+    close_door = (door_open.to(door_closed) | door_forced_open.to(door_closed))
     force_open = door_closed.to(door_forced_open)
-    id_scan = door_closed.to(loading_user)
-    user_lookup_fail = loading_user.to(user_not_found)
-    user_registration = user_not_found.to(register_user)
-    user_id_invalid = loading_user.to(user_rescan)
-    user_permission_invalid = loading_user.to(user_no_permission)
+
+    await_ID_validation = door_closed.to(loading_user)
+    def on_id_scan(self, id:str):
+        if id is None:
+            self.user_id_invalid()
+        else:
+            self.await_ID_validation()
+            DB_Interop.get_user(id, self.callback_UserLookup)
+    
+    user_id_invalid = loading_user.to(door_closed)
+    def on_user_id_invalid(self):
+        self.currentWindow().showCenterAlert("Unable to read WPI ID", _DEFAULT_ALERT_DURATION)
+        self.currentWindow().showBottomAlert("Please rescan WPI ID", _DEFAULT_ALERT_DURATION)
+    
+    def callback_UserLookup(self, response: dict):
+        if response.status_code == 404: self.user_registration()
+        elif response.door_access: self.user_lookup_success()
+        elif not response.door_access: self.user_permission_invalid()
+        else: self.user_id_invalid()
+
+    user_registration = loading_user.to(register_user)
     user_lookup_success = loading_user.to(door_open)
+    user_permission_invalid = loading_user.to(door_closed)
+    def on_user_permission_invalid(self):
+        self.currentWindow().showCenterAlert("Unauthorized\nContact Webmaster for access", _DEFAULT_ALERT_DURATION)
+        self.currentWindow().showBottomAlert("User does not have permission to open door", _DEFAULT_ALERT_DURATION)
 
-    remove_asset = door_open.to(asset_removed)
-    add_known_asset = door_open.to(known_asset_added)
-    add_unknown_asset = door_open.to(unknown_asset_added)
-    asset_registration = unknown_asset_added.to(register_unknown_asset)
+    remove_asset = door_open.to.itself()
+    def on_remove_asset(self):
+        self.currentWindow().showBottomAlert("Asset Removed", _DEFAULT_ALERT_DURATION)
+    add_known_asset = door_open.to.itself()
+    def on_add_known_asset(self):
+        self.currentWindow().showBottomAlert("Asset Identified", _DEFAULT_ALERT_DURATION)
+    asset_registration = door_open.to(register_unknown_asset)
 
-    test_asset_list = [Asset(None, "Asset " + str(i), i, None) for i in range(20)]
+    require_reinsert_last = (door_open.to(reinsert_last) | register_unknown_asset.to(reinsert_last) | reinsert_all.to(reinsert_last))
+    
+    require_reinsert_all = (door_open.to(reinsert_all) | register_unknown_asset.to(reinsert_all) | reinsert_last.to(reinsert_all))
+    
+    reinsert_complete = (reinsert_last.to(door_open) | reinsert_all.to(door_open))
 
     windows = {
             door_closed.name: MessageWindow(bottom_text="Scan WPI ID to begin"),
             door_forced_open.name: MessageWindow(center_text="Close door\nto proceed", bottom_text="Door Forced"),
             loading_user.name: LoadingWindow(),
-            user_not_found.name: MessageWindow(center_text="User Not Found.", bottom_text="Tap anywhere to register WPI ID"),
-            register_user.name: QRWindow(bottom_text="Scan QR Code to register WPI ID"),
-            user_rescan.name: MessageWindow(center_text="Please rescan WPI ID", bottom_text="Unable to read WPI ID"),
-            user_no_permission.name: MessageWindow(center_text="Unauthorized\nContact Webmaster for access", bottom_text="User does not have permission to open door"),
+            register_user.name: QRWindow(bottom_text="User Not Found. Scan QR Code to register WPI ID"),
             door_open.name: AssetWindow(test_asset_list, presence_list = [1 for i in range(20)]),
-            asset_removed.name: MessageWindow(center_text="Asset Removed"),
-            known_asset_added.name: MessageWindow(center_text="Asset Added"),
-            unknown_asset_added.name: MessageWindow(center_text="Unknown Asset Added", bottom_text="Tap anywhere to register new asset"),
-            register_unknown_asset.name: QRWindow(bottom_text="Scan QR Code to register asset")
+            register_unknown_asset.name: QRWindow(bottom_text="Scan QR Code to register asset"),
+
+            reinsert_last.name: MessageWindow(center_text="Asset Not Identified", bottom_text="Remove and reinsert last asset."),
+            reinsert_all.name: MessageWindow(center_text="Assets Out of Sync", bottom_text="Remove and reinsert ALL assets."),
         }
 
     def setConnection(self, connection):
@@ -59,6 +83,10 @@ class Main(StateMachine):
     
     def currentWindow(self) -> MainWindow:
         return self.windows[self.current_state.name]
+    
+    def before_transition(self, event, state):
+        if event == self.reinsert_complete: # todo: redirect state transition depending on hardware status
+            pass
 
     def on_exit_state(self, event, state):
         self.currentWindow().hide()
@@ -66,6 +94,17 @@ class Main(StateMachine):
     def on_enter_state(self, event, state):
         if self.connection: self.currentWindow().update_online(self.connection.current_state_value)
         self.currentWindow().show()
+
+    def callback_HardwareStateChange(self, state: str):
+        match state:
+            case "NOMINAL":
+                self.reinsert_complete()
+            case "REINSERT_LAST":
+                self.reinsert_last()
+            case "REINSERT_ALL":
+                self.reinsert_all()
+            case default:
+                print("Unknown hardware state: " + state)
 
 class Connection(StateMachine):
     online = State('Online', value=True)
@@ -80,12 +119,24 @@ class Connection(StateMachine):
     def on_enter_state(self, event, state):
         main.currentWindow().update_online(self.current_state_value)
 
+class OneWireValidation(StateMachine):
+    nominal = State('Nominal', value=0, initial=True)
+    reinsert = State('Reinsert', value=1)
+    global_reset = State('Global Reset', value=2)
+
+    go_nominal = (reinsert.to(nominal) | global_reset.to(nominal))
+    go_reinsert = (nominal.to(reinsert) | global_reset.to(reinsert))
+    go_global_reset = (nominal.to(global_reset) | reinsert.to(global_reset))
+
+    def on_enter_nominal(self):
+        main.currentWindow().update_online(self.current_state_value)
+
 if __name__ == "__main__":
     main = Main()
     connection = Connection()
+    slotManager = SlotManager()
     main.setConnection(connection)
-    db_interop = DB_Interop()
-    hardware_interop = Hardware_Interop()
+    hardware_interop = Hardware_Interop(slotManager.setSlot, main.callback_HardwareStateChange)
 
     
 
