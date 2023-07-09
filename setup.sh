@@ -1,5 +1,5 @@
 #!/bin/sh
-W1MOD="dtoverlay=w1-gpio"
+W1MOD="dtoverlay=w1-gpio,gpiopin=6"
 grep -qxF $W1MOD boot/config.txt || echo $W1MOD >> boot/config.txt
 
 # Install pigpio
