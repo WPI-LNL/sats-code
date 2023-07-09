@@ -12,7 +12,7 @@ class Asset:
         self.last_seen = lambda: datetime.now() if self.position else self.last_seen_datetime
         
         db_asset = DB_Interop.get_asset(id)
-        if db_asset.status_code != 200:
+        if db_asset['status_code'] != 200:
             DB_Interop.create_asset(id, position, self.last_seen, self.status)
         else:
             self.display_name = db_asset["asset_display_name"]

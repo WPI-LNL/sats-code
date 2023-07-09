@@ -2,7 +2,8 @@
     "cSpell.words": [
         "customtkinter",
         "rescan",
-        "tkfontawesome"
+        "tkfontawesome",
+        "wiegand"
     ],
     "cSpell.ignoreWords": [
         "qrcode"

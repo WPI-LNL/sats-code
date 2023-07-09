@@ -1,15 +1,15 @@
 from statemachine import StateMachine, State
 from hardware_interop import Hardware_Interop
-from db_interop import DB_Interop
-from slot import Slot, SlotManager
+from db_interop import DB_Interop, DB_URL
+from slot import Slot, SlotManager, RegisterAssetException
 from gui import *
 
-_UNKNOWN_ASSET_ID = "UNK"
-_DEFAULT_ALERT_DURATION = 5 #seconds
+_DEFAULT_ALERT_DURATION = 5 # seconds
 
 class Main(StateMachine):
     def __init__(self):
         self.connection = None
+        self.slotManager.setWidgetList(self.windows[self.door_open.name].slot_widgets)
         super().__init__()
 
     door_closed = State('Door Closed', initial=True) # Door closed, idle
@@ -40,9 +40,9 @@ class Main(StateMachine):
         self.currentWindow().showBottomAlert("Please rescan WPI ID", _DEFAULT_ALERT_DURATION)
     
     def callback_UserLookup(self, response: dict):
-        if response.status_code == 404: self.user_registration()
-        elif response.door_access: self.user_lookup_success()
-        elif not response.door_access: self.user_permission_invalid()
+        if response["status_code"]: self.user_registration()
+        elif response["door_access"]: self.user_lookup_success()
+        elif not response["door_access"]: self.user_permission_invalid()
         else: self.user_id_invalid()
 
     user_registration = loading_user.to(register_user)
@@ -51,14 +51,9 @@ class Main(StateMachine):
     def on_user_permission_invalid(self):
         self.currentWindow().showCenterAlert("Unauthorized\nContact Webmaster for access", _DEFAULT_ALERT_DURATION)
         self.currentWindow().showBottomAlert("User does not have permission to open door", _DEFAULT_ALERT_DURATION)
-
-    remove_asset = door_open.to.itself()
-    def on_remove_asset(self):
-        self.currentWindow().showBottomAlert("Asset Removed", _DEFAULT_ALERT_DURATION)
-    add_known_asset = door_open.to.itself()
-    def on_add_known_asset(self):
-        self.currentWindow().showBottomAlert("Asset Identified", _DEFAULT_ALERT_DURATION)
+    
     asset_registration = door_open.to(register_unknown_asset)
+    asset_registration_complete = register_unknown_asset.to(door_open)
 
     require_reinsert_last = (door_open.to(reinsert_last) | register_unknown_asset.to(reinsert_last) | reinsert_all.to(reinsert_last))
     
@@ -66,12 +61,14 @@ class Main(StateMachine):
     
     reinsert_complete = (reinsert_last.to(door_open) | reinsert_all.to(door_open))
 
-    windows = {
+    slotManager = SlotManager()
+
+    windows: dict[str, MainWindow] = {
             door_closed.name: MessageWindow(bottom_text="Scan WPI ID to begin"),
             door_forced_open.name: MessageWindow(center_text="Close door\nto proceed", bottom_text="Door Forced"),
             loading_user.name: LoadingWindow(),
             register_user.name: QRWindow(bottom_text="User Not Found. Scan QR Code to register WPI ID"),
-            door_open.name: AssetWindow(test_asset_list, presence_list = [1 for i in range(20)]),
+            door_open.name: SlotWindow(slotManager),
             register_unknown_asset.name: QRWindow(bottom_text="Scan QR Code to register asset"),
 
             reinsert_last.name: MessageWindow(center_text="Asset Not Identified", bottom_text="Remove and reinsert last asset."),
@@ -105,6 +102,14 @@ class Main(StateMachine):
                 self.reinsert_all()
             case default:
                 print("Unknown hardware state: " + state)
+    
+    def callback_UpdateSlot(self, position: int, id: str, has_asset: bool):
+        try:
+            self.slotManager.setSlot(position, id, has_asset)
+        except RegisterAssetException as ex:
+            self.windows[self.register_unknown_asset.name].update_qrcode(DB_URL.create_asset(ex.id))
+            self.windows[self.register_unknown_asset.name].update_bottom_text("Scan to register asset in slot " + str(ex.slot.position) + ' with ID "' + ex.id + '". Tap to continue.')
+            self.asset_registration()
 
 class Connection(StateMachine):
     online = State('Online', value=True)
@@ -112,12 +117,16 @@ class Connection(StateMachine):
 
     go_online = offline.to(online)
     go_offline = online.to(offline)
-
-    def on_exit_state(self, event, state):
-        main.currentWindow().update_online(self.current_state_value)
     
     def on_enter_state(self, event, state):
         main.currentWindow().update_online(self.current_state_value)
+    
+    def update(self):
+        if Connection.is_online(): self.go_online()
+        else: self.go_offline()
+
+    def is_online() -> bool:
+        DB_Interop.is_online()
 
 class OneWireValidation(StateMachine):
     nominal = State('Nominal', value=0, initial=True)
@@ -134,13 +143,34 @@ class OneWireValidation(StateMachine):
 if __name__ == "__main__":
     main = Main()
     connection = Connection()
-    slotManager = SlotManager()
     main.setConnection(connection)
-    hardware_interop = Hardware_Interop(slotManager.setSlot, main.callback_HardwareStateChange)
+    hardware_interop = Hardware_Interop(main.callback_UpdateSlot, main.callback_HardwareStateChange, main.on_id_scan)
 
-    
+    slot_events = [
+        lambda: main.callback_UpdateSlot(0, None, True),
+        lambda: main.callback_UpdateSlot(0, "ID1", True),
+        lambda: main.callback_UpdateSlot(2, None, True),
+        lambda: main.callback_UpdateSlot(2, "ID2", True),
+        lambda: main.callback_UpdateSlot(1, None, True),
+        lambda: main.callback_UpdateSlot(1, "UNK", True),
+        lambda: main.callback_UpdateSlot(1, None, False),
+        lambda: main.callback_UpdateSlot(0, None, False),
+        lambda: main.callback_UpdateSlot(0, None, True),
+        lambda: main.callback_UpdateSlot(0, "newID", True),
+        lambda: main.callback_UpdateSlot(0, None, False),
+        lambda: main.callback_UpdateSlot(0, None, True),
+        lambda: main.callback_UpdateSlot(0, "Thumbdrive 1", True),
+    ]
+    slot_event_counter = 0
 
-    main.windows[main.door_closed.name].bind("<Return>", lambda event: main.id_scan())
+    def slot_event(e):
+        global slot_event_counter
+        slot_events[slot_event_counter]()
+        slot_event_counter = (slot_event_counter + 1) % len(slot_events)
+
+    main.windows[main.door_closed.name].bind("<Return>", lambda event: main.on_id_scan("sample"))
     main.windows[main.loading_user.name].bind("<Return>", lambda event: main.user_lookup_success())
-    main.windows[main.door_open.name].bind("<Return>", lambda event: main.windows[main.door_open.name].update([0,0,0,0]+ [Asset(None, "Asset " + str(i), i, None) for i in range(4,16)] + [0,0,0,0], [1 for i in range(16)]+[0,0,0,0]))
+    main.windows[main.door_open.name].bind("<Up>", slot_event)
+    #main.windows[main.door_open.name].bind("<Return>", lambda event: main.windows[main.door_open.name].update([0,0,0,0]+ [Asset(None, "Asset " + str(i), i, None) for i in range(4,16)] + [0,0,0,0], [1 for i in range(16)]+[0,0,0,0]))
+    main.windows[main.register_unknown_asset.name].bind("<Return>", lambda event: main.asset_registration_complete())
     main.currentWindow().mainloop()
