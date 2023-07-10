@@ -1,17 +1,23 @@
-import onewire_interface
-import wiegand_interface
-
+from onewire_interface import OneWireInterface
+from wiegand_interface import Wiegand_Interface
+from neopixel_interface import Neopixel_Interface
 class Hardware_Interop:
     def __init__(self, callback_UpdateSlot: callable, callback_HardwareStateChange: callable, callback_IDScan: callable):
-        onewire_interface.registerCallback_UpdateSlot(callback_UpdateSlot)
-        onewire_interface.registerCallback_HardwareStateChange(callback_HardwareStateChange)
-        wiegand_interface.registerCallback(callback_IDScan)
+        self.onewire_interface = OneWireInterface()
+        self.wiegand_interface = Wiegand_Interface(callback_IDScan)
+        self.neopixel_interface = Neopixel_Interface()
+
+        self.onewire_interface.registerCallback_UpdateSlot(callback_UpdateSlot)
+        self.onewire_interface.registerCallback_HardwareStateChange(callback_HardwareStateChange)
 
     def setStatusColor(self, position: int, color: tuple[int]):
-        onewire_interface.setStatusColor(position, color)
+        self.neopixel_interface.set(position, color)
     
-    def setStatusColors(self, colors: list[tuple[int]]):
-        onewire_interface.setStatusColors(colors)
+    def setAllStatusColors(self, colors: list[tuple[int]]):
+        self.neopixel_interface.setStatusColors(colors)
+
+    def setCardReaderLED(self, state: bool):
+        self.wiegand_interface.setLED(state)
 
     def isDoorOpen(self) -> bool:
         pass
