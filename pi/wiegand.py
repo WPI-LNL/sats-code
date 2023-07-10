@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Authors: B. Peters, A. Hayden, M. Jacobs, M. Haahr
 
 import pigpio
 
