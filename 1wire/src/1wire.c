@@ -92,13 +92,7 @@ int main() {
     while (loop) {
         usleep(10000); // 10ms
         gets(input_string);
-        if(strstr(input_string, "getUIDs") != NULL) {
-            printf("UIDs:")
-            for(int i = 0; i < SLOTS_COUNT; i++) {
-                printf("%s, ", known_uids[i]);
-            }
-            printf("\n")
-        } else if (strstr(input_string, "getPresence") != NULL) {
+        if (strstr(input_string, "getPresence") != NULL) {
             printf("Presence:")
             for(int i = 0; i < SLOTS_COUNT; i++) {
                 printf("%s, ", presence[i] ? "True" : "False");
@@ -350,13 +344,6 @@ int handle_slot_queue() {
             line = NULL;
         }
         fclose(fslaves);
-    }
-    if (slot_queue_a != slot_queue_b) {
-        //TODO increase bus rescan speed
-	// jk we can't actually do that lol
-    } else {
-        //TODO decrease bus rescan speed
-	// jk we can't actually do that lol
     }
     return 0;
 }

@@ -27,11 +27,6 @@ class OneWireInterface:
                 slot_id = int(output_str.split("#")[1].split(",")[0])
                 self._updateSlot_callback(slot_id, "", False)
 
-            if "UIDs:" in output_str:
-                # Message format: "UIDs: <string>, <>, ... <>, <>\n"
-                uids = output_str.split(":")[1].strip().split(", ")
-                self._UIDs_callback(uids)
-
             if "Presence:" in output_str:
                 # Message format: "Presence: <True/False>, <>, ... <>, <>\n"
                 uids = [bool(i) for i in output_str.split(":")[1].strip().split(", ")]
@@ -56,8 +51,9 @@ class OneWireInterface:
 
     # return 20-element list of UIDs for present fobs, or 0 for empty slots
     def getUIDs(self, callback: callable = None):
-        if callback: self._UIDs_callback = callback
-        self._thread.request("getUIDs")
+
+        # TODO replace with read from /sys/bus/w1/devices/w1_bus_master1/w1_master_slaves
+        return
         # return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00003e09a09d2d, 0, 0, 0, 0, 0, 0, 0, 0];
 
     # return 20-elemnt list of ints, 1 if a fob is present in that slot, 0 otherwise
