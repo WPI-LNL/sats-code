@@ -62,9 +62,6 @@ struct gpiohandle_data gpio_data;
 
 char input_string[255];
 
-
-
-
 int main() {
     signal(SIGINT, INThandler); // intercept control-c
     printf("STARTED PROGRAM:\n");
@@ -91,16 +88,16 @@ int main() {
     }*/
     while (loop) {
         usleep(10000); // 10ms
-        gets(input_string);
+        /*gets(input_string);
         if (strstr(input_string, "getPresence") != NULL) {
             printf("Presence:")
             for(int i = 0; i < SLOTS_COUNT; i++) {
                 printf("%s, ", presence[i] ? "True" : "False");
             }
             printf("\n")
-        } 
-	handle_interrupt_updates();
-	handle_slot_queue();
+        } */
+	    handle_interrupt_updates();
+	    handle_slot_queue();
     }
     return 0;
 }
@@ -280,11 +277,13 @@ int get_pin_updates_from_interrupt(unsigned char i2c_addr, unsigned char int_add
 	    int idx = idx_offset + i;
 	    int state = (gpio_states >> i) & 0x1;
 	    if (state == 1 && presence[idx] == 0) {	// FOB INSERTED
+        printf("FOB CONNECTED: SLOT #%d\n", idx);
 		enqueue_slot(idx);
 		dispatch_add_event(idx, 0);
 		presence[idx] = 1;
 	    }
 	    if (state == 0 && presence[idx] == 1){ // FOB REMOVED
+        printf("FOB DISCONNECTED: SLOT #%d\n", idx);
 		//printf("a\n");
 		rmqueue_slot(idx);
 		//printf("b\n");
