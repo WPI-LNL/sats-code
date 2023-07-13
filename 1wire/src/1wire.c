@@ -297,7 +297,7 @@ int dispatch_add_event(int slot, char* uid) {
 }
 
 int dispatch_remove_event(int slot) {
-    printf("FOB  : SLOT #%d\n", slot);
+    printf("FOB REMOVED : SLOT #%d\n", slot);
     fflush(stdout);
     return 0;
 }
