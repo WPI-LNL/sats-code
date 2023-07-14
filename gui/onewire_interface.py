@@ -2,14 +2,14 @@
 import subprocess
 import threading
 
-class OneWireInterface:
+class OneWireInterfaceThread:
     def __init__(self, callback: callable):
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
         self._updateSlot_callback = callback
         self._UIDs_callback = lambda x: None
         self._presence_callback = lambda x: None
         self.process = subprocess.Popen(["sudo", "/home/pi/hacka-code/1wire/1wire"], stdout = subprocess.PIPE)
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
 
     def _run(self):
         while True:
@@ -34,44 +34,64 @@ class OneWireInterface:
 
     def request(self, msg: str):
         self.process.stdin.write(msg+"\n")
+import os
+if os.uname()[1] == 'raspberrypi':
+    class OneWireInterface:
 
-class OneWireInterface:
+        def __init__(self, _callback: callable):
+            self._thread = OneWireInterfaceThread(_callback)
 
-    def __init__(self, _callback: callable):
-        self._thread = OneWireInterfaceThread(self._callback)
+        # sets a function to be used as the callback (i.e. the driver will call it when a device is changed)
+        # Callback is called with int and str: int is the slot number, str is the UID of the device
+        def registerCallback_UpdateSlot(self, callback):
+            self._thread._callback = callback
 
-    # sets a function to be used as the callback (i.e. the driver will call it when a device is changed)
-    # Callback is called with int and str: int is the slot number, str is the UID of the device
-    def registerCallback_UpdateSlot(self, callback):
-        self._thread._callback = callback
+        # Callback is called with single string argument: "NOMINAL", "REINSERT_LAST", or "REINSERT_ALL"
+        def registerCallback_HardwareStateChange(callback):
+            pass
 
-    # Callback is called with single string argument: "NOMINAL", "REINSERT_LAST", or "REINSERT_ALL"
-    def registerCallback_HardwareStateChange(callback):
-        pass
+        # return 20-element list of UIDs for present fobs, or 0 for empty slots
+        def getUIDs(self, callback: callable = None):
 
-    # return 20-element list of UIDs for present fobs, or 0 for empty slots
-    def getUIDs(self, callback: callable = None):
+            # TODO replace with read from /sys/bus/w1/devices/w1_bus_master1/w1_master_slaves
+            return
+            # return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00003e09a09d2d, 0, 0, 0, 0, 0, 0, 0, 0];
 
-        # TODO replace with read from /sys/bus/w1/devices/w1_bus_master1/w1_master_slaves
-        return
-        # return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00003e09a09d2d, 0, 0, 0, 0, 0, 0, 0, 0];
+        # return 20-elemnt list of ints, 1 if a fob is present in that slot, 0 otherwise
+        def getPresence(self, callback: callable = None):
+            if callback: self._presence_callback = callback
+            self._thread.request("getPresence")
+            #return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
 
-    # return 20-elemnt list of ints, 1 if a fob is present in that slot, 0 otherwise
-    def getPresence(self, callback: callable = None):
-        if callback: self._presence_callback = callback
-        self._thread.request("getPresence")
-        #return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+        # return a variable-length list of UIDs. These are the UIDs the devie regularly scans for
+        # when a jack is inserted or removed; NOT just the ones currently present
+        def getKnownUIDs():
+            pass #[0x00003e09a09d2d]
 
-    # return a variable-length list of UIDs. These are the UIDs the devie regularly scans for
-    # when a jack is inserted or removed; NOT just the ones currently present
-    def getKnownUIDs():
-        pass #[0x00003e09a09d2d]
+        # add a UID to the list that the device regularly scans for
+        def registerUID(uid):
+            pass
 
-    # add a UID to the list that the device regularly scans for
-    def registerUID(uid):
-        pass
-
-    # trigger the device to run a full search of the address space.
-    # returns a variable length list of all UIDs found on the bus
-    def scanBus():
-        pass # return [0x00003e09a09d2d]
+        # trigger the device to run a full search of the address space.
+        # returns a variable length list of all UIDs found on the bus
+        def scanBus():
+            pass # return [0x00003e09a09d2d]
+else:
+    class OneWireInterface:
+        def __init__(self, _callback: callable):
+            pass
+        def registerCallback_UpdateSlot(self, callback):
+            pass
+        def registerCallback_HardwareStateChange(callback):
+            pass
+        def getUIDs(self, callback: callable = None):
+            pass
+        def getPresence(self, callback: callable = None):
+            pass
+        def getKnownUIDs():
+            pass
+        def registerUID(uid):
+            pass
+        def scanBus():
+            pass
+        
