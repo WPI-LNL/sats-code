@@ -1,0 +1,10 @@
+board==1.0
+customtkinter==5.1.2
+neopixel==0.0.1
+pigpio==1.78
+Pillow==10.0.0
+python-dotenv==1.0.0
+qrcode==7.4.2
+Requests==2.31.0
+statemachine==0.1
+typing_extensions==4.7.1
