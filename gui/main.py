@@ -27,7 +27,7 @@ class Main(StateMachine):
     force_open = door_closed.to(door_forced_open)
 
     await_ID_validation = door_closed.to(loading_user)
-    def on_id_scan(self, id:str):
+    def on_id_scan(self, id:str=None):
         if id is None:
             self.user_id_invalid()
         else:

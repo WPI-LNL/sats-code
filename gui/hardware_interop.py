@@ -3,8 +3,9 @@ from wiegand_interface import Wiegand_Interface
 from neopixel_interface import Neopixel_Interface
 class Hardware_Interop:
     def __init__(self, callback_UpdateSlot: callable, callback_HardwareStateChange: callable, callback_IDScan: callable):
+        self._wiegand_callback = callback_IDScan
         self.onewire_interface = OneWireInterface(callback_UpdateSlot)
-        self.wiegand_interface = Wiegand_Interface(callback_IDScan)
+        self.wiegand_interface = Wiegand_Interface(self._callback_IDScan)
         self.neopixel_interface = Neopixel_Interface()
 
     def setStatusColor(self, position: int, color: tuple[int]):
@@ -18,3 +19,6 @@ class Hardware_Interop:
 
     def isDoorOpen(self) -> bool:
         pass
+
+    def _callback_IDScan(self, bits, num, pi):
+        self._wiegand_callback(str(num))
