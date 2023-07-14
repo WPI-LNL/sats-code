@@ -1,4 +1,5 @@
 from statemachine import StateMachine, State
+from gui.gui import *
 from hardware_interop import Hardware_Interop
 from db_interop import DB_Interop, DB_URL
 from slot import Slot, SlotManager, RegisterAssetException
@@ -105,7 +106,8 @@ class Main(StateMachine):
     
     def callback_UpdateSlot(self, position: int, id: str, has_asset: bool):
         try:
-            hardware_interop.setStatusColor(position, (0,255,0) if has_asset else (0,0,0))
+            hardware_interop.setStatusColor(position, (128,128,0) if has_asset else (0,0,128))
+            self.currentWindow().after(250, lambda: hardware_interop.setStatusColor(position, (0,255,0) if has_asset else (0,0,0)))
             self.slotManager.setSlot(position, id, has_asset)
         except RegisterAssetException as ex:
             self.windows[self.register_unknown_asset.name].update_qrcode(DB_URL.create_asset(ex.id))
