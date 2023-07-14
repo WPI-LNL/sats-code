@@ -105,6 +105,7 @@ class Main(StateMachine):
     
     def callback_UpdateSlot(self, position: int, id: str, has_asset: bool):
         try:
+            hardware_interop.setStatusColor(position, (0,255,0) if has_asset else (0,0,0))
             self.slotManager.setSlot(position, id, has_asset)
         except RegisterAssetException as ex:
             self.windows[self.register_unknown_asset.name].update_qrcode(DB_URL.create_asset(ex.id))
