@@ -6,6 +6,7 @@ from qrcode.image.pil import PilImage
 from PIL import Image, ImageTk
 from db_interop import AssetStatus
 from slot import Slot, SlotManager
+import os
 
 # CONSTANTS
 
@@ -81,9 +82,10 @@ class MainWindow(ctk.CTkToplevel):
         self.clear_bottom_alert_worker = None
 
     def show(self):
-        #super().attributes("-fullscreen", True)
-        #super().wm_attributes("-topmost", True)
-        #super().focus_set()
+        if os.uname()[1] == 'raspberrypi':
+            super().attributes("-fullscreen", True)
+            super().wm_attributes("-topmost", True)
+            super().focus_set()
         self.deiconify()
     
     def hide(self):
