@@ -1,5 +1,4 @@
 from statemachine import StateMachine, State
-from gui.gui import *
 from hardware_interop import Hardware_Interop
 from db_interop import DB_Interop, DB_URL
 from slot import Slot, SlotManager, RegisterAssetException
