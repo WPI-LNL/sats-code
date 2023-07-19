@@ -1,16 +1,22 @@
 #!/usr/bin/python3
-# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
 
-# Simple test for NeoPixels on Raspberry Pi
+# Simple test for NeoPixels & Wiegand
 import time
 import board
 import neopixel
-
+import digitalio
+from wiegand_interface import Wiegand_Interface
 
 # Choose an open pin connected to the Data In of the NeoPixel strip, i.e. board.D18
 # NeoPixels must be connected to D10, D12, D18 or D21 to work.
 pixel_pin = board.D10
+row_select_pins = [board.D0, board.D9, board.D11, board.D5]
+row_digitalio_pins = [digitalio.DigitalInOut(pin) for pin in row_select_pins]
+for pin in row_digitalio_pins:
+    pin.direction = digitalio.Direction.OUTPUT
+    pin.value = False
+
+row_digitalio_pins[0].value = True
 
 # The number of NeoPixels
 num_pixels = 6
@@ -23,36 +29,23 @@ pixels = neopixel.NeoPixel(
     pixel_pin, num_pixels, brightness=0.2, auto_write=False, pixel_order=ORDER
 )
 
+pixels.fill((0, 0, 0))
+pixels.show()
 
-def wheel(pos):
-    # Input a value 0 to 255 to get a color value.
-    # The colours are a transition r - g - b - back to r.
-    if pos < 0 or pos > 255:
-        r = g = b = 0
-    elif pos < 85:
-        r = int(pos * 3)
-        g = int(255 - pos * 3)
-        b = 0
-    elif pos < 170:
-        pos -= 85
-        r = int(255 - pos * 3)
-        g = 0
-        b = int(pos * 3)
-    else:
-        pos -= 170
-        r = 0
-        g = int(pos * 3)
-        b = int(255 - pos * 3)
-    return (r, g, b) if ORDER in (neopixel.RGB, neopixel.GRB) else (r, g, b, 0)
-
-
-def rainbow_cycle(wait):
-    for j in range(255):
-        for i in range(num_pixels):
-            pixel_index = (i * 256 // num_pixels) + j
-            pixels[i] = wheel(pixel_index & 255)
+def _callback(num):
+    temp_pixels = pixels[:]
+    for _ in range(3):
+        pixels.fill((0, 0, 255))
         pixels.show()
-        time.sleep(wait)
+        time.sleep(0.1)
+        pixels.fill((0, 0, 0))
+        pixels.show()
+        time.sleep(0.1)
+    pixels = temp_pixels[:]
+    pixels.show()
+
+
+reader = Wiegand_Interface(_callback)
 
 
 while True:
@@ -98,15 +91,16 @@ while True:
                 pixels[i] = (128, 128, 0)
                 pixels.show()
                 time.sleep(0.25)
-                pixels[i] = (128, 0, 0)
+                pixels[i] = (0, 128, 0)
                 pixels.show()
                 
         if "FOB REMOVED" in output_str:
             i = int(output_str.split("#")[1].split(",")[0])
-            pixels[i] = (0, 0, 128)
+            pixels[i] = (128, 0, 0)
             pixels.show()
             time.sleep(0.25)
             pixels[i] = (0, 0, 0)
             pixels.show()
+        
 
 
