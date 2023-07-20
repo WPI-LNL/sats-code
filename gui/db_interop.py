@@ -9,6 +9,18 @@ API_URL = os.getenv("API_URL", "http://lnl.wpi.edu/db/api/v1/sats/") # default: 
 
 USER_URL = "https://example.com"
 
+OFFLINE_KNOWN_ASSETS = {
+    "00003e09a09d": "Red Asset", "00003e088796": "Blue Asset"
+}
+
+OFFLINE_UNKNOWN_ASSETS = {
+    "00003e0852fd": "Yellow Asset", "00003e08136c": "Green Asset",
+}
+
+OFFLINE_INVALID_ASSETS = {
+    "00003e09aff6": "Orange Asset"
+}
+
 class AssetStatus(Enum):
     UNKNOWN = 0,
     IN = 1,
@@ -47,8 +59,8 @@ class DB_Interop:
         return {"status_code": response.status_code} if not response.ok else response.json() | {"status_code": response.status_code}
     
     def get_asset__offline(asset_id) -> dict:
-        if not "new" in asset_id.lower():
-            return {"asset_id": asset_id, "asset_display_name": "Temp " + str(asset_id), "asset_position": 0, "asset_last_seen": datetime.now(), "asset_status": AssetStatus.IN, "status_code": 200}
+        if asset_id in OFFLINE_KNOWN_ASSETS.keys():
+            return {"asset_id": asset_id, "asset_display_name": OFFLINE_KNOWN_ASSETS[asset_id], "asset_position": 0, "asset_last_seen": datetime.now(), "asset_status": AssetStatus.IN, "status_code": 200}
         else:
             return {"asset_id": asset_id, "asset_display_name": None, "asset_position": 0, "asset_last_seen": datetime.now(), "asset_status": AssetStatus.REGISTER, "status_code": 200}
     
@@ -74,7 +86,10 @@ class DB_Interop:
         return {"status_code": response.status_code} if not response.ok else response.json() | {"status_code": response.status_code}
     
     def update_asset_dict__offline(payload: dict) -> dict:
-        return {"asset_display_name": "Temp " + str(payload["asset_id"]), "asset_position": payload["asset_position"], "asset_last_seen": payload["asset_last_seen"], "asset_status": payload["asset_status"], "status_code": 200}
+        if payload["asset_id"] in OFFLINE_KNOWN_ASSETS.keys():
+            return {"asset_display_name": OFFLINE_KNOWN_ASSETS[payload["asset_id"]], "asset_position": payload["asset_position"], "asset_last_seen": payload["asset_last_seen"], "asset_status": payload["asset_status"], "status_code": 200}
+        else:
+            return {"asset_display_name": None, "asset_position": payload["asset_position"], "asset_last_seen": payload["asset_last_seen"], "asset_status": payload["asset_status"], "status_code": 200}
     
     def update_asset(asset_id: str, asset_position: int, asset_last_seen: datetime, asset_status: AssetStatus) -> dict:
         payload = {
@@ -93,7 +108,7 @@ class DB_Interop:
 
 class DB_URL:
     def associate_badge(badge_id):
-        return USER_URL + '/associate_badge/' + urllib.parse.quote(badge_id) + '/' # TODO: implement URL
+        return USER_URL + '/associate_badge/' + urllib.parse.quote(badge_id) + '/' # TODO: verify URL
 
     def create_asset(asset_id):
-        return USER_URL + '/create_asset/' + urllib.parse.quote(asset_id) + '/' # TODO: implement URL
+        return USER_URL + '/create_asset/' + urllib.parse.quote(asset_id) + '/' # TODO: verify URL

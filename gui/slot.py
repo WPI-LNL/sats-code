@@ -3,7 +3,7 @@ from typing_extensions import override
 import customtkinter as ctk
 from db_interop import DB_Interop, AssetStatus
 
-_UNKNOWN_ASSET_ID = "UNK"
+_UNKNOWN_ASSET_ID = ["UNK", "00003e09aff6"]
 
 class Slot:
     def __init__(self, position: int, id: str, display_name: str, has_asset: bool):
@@ -11,7 +11,7 @@ class Slot:
         self.position = position
         self.has_asset = has_asset
         self.label = lambda: self.display_name if self.display_name else "< UNKNOWN >" if self.has_asset else ""
-        self.valid_id = lambda: (self.id != _UNKNOWN_ASSET_ID) & (self.id is not None)
+        self.valid_id = lambda: (self.id not in _UNKNOWN_ASSET_ID) & (self.id is not None)
         self.status = lambda: \
             AssetStatus.OUT if not self.has_asset else \
             AssetStatus.IN if self.display_name else \
