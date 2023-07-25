@@ -94,15 +94,14 @@ class Main(StateMachine):
         self.currentWindow().show()
 
     def callback_HardwareStateChange(self, state: str):
-        match state:
-            case "NOMINAL":
-                self.reinsert_complete()
-            case "REINSERT_LAST":
-                self.reinsert_last()
-            case "REINSERT_ALL":
-                self.reinsert_all()
-            case default:
-                print("Unknown hardware state: " + state)
+        if state == "NOMINAL":
+            self.reinsert_complete()
+        elif state == "REINSERT_LAST":
+            self.reinsert_last()
+        elif state == "REINSERT_ALL":
+            self.reinsert_all()
+        else:
+            print("Unknown hardware state: " + state)
     
     def callback_UpdateSlot(self, position: int, id: str, has_asset: bool):
         try:
