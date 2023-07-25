@@ -99,7 +99,7 @@ while True:
                 pixels.show()
         if "FOB REMOVED" in output_str:
             i = int(output_str.split("#")[1].split(",")[0])
-            pixels[i] = (0, 0, 0);
+            pixels[i] = (0, 0, 0)
             pixels.show()
 
 

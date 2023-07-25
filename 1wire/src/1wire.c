@@ -1,3 +1,4 @@
+#include <Python.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +26,8 @@
 #define GPIO_1_ADDR 0x20
 #define GPIO_2_ADDR 0x24
 
+#define SLOTS_COUNT 20
+
 char busSearch[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_search"; // Path to search control file
 //char busTimeout[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_timeout"; 
 //char busTimeout_us[] = "/sys/bus/w1/devices/w1_bus_master1/w1_master_timeout_us";
@@ -37,12 +40,12 @@ FILE* fslaves;
 
 int loop = TRUE;
 
-char* slots[20];
-int presence[20];
+char* slots[SLOTS_COUNT];
+int presence[SLOTS_COUNT];
 char** known_uids;
 int known_uids_len;
 
-int slot_queue[20];
+int slot_queue[SLOTS_COUNT];
 int slot_queue_a = 0;
 int slot_queue_b = 0;
 
@@ -57,6 +60,7 @@ struct gpiohandle_request req_a2;
 struct gpiohandle_request req_b2;
 struct gpiohandle_data gpio_data;
 
+char input_string[255];
 
 int main() {
     signal(SIGINT, INThandler); // intercept control-c
@@ -84,8 +88,16 @@ int main() {
     }*/
     while (loop) {
         usleep(10000); // 10ms
-        handle_interrupt_updates();
-        handle_slot_queue();
+        /*gets(input_string);
+        if (strstr(input_string, "getPresence") != NULL) {
+            printf("Presence:")
+            for(int i = 0; i < SLOTS_COUNT; i++) {
+                printf("%s, ", presence[i] ? "True" : "False");
+            }
+            printf("\n")
+        } */
+	    handle_interrupt_updates();
+	    handle_slot_queue();
     }
     return 0;
 }
@@ -297,7 +309,7 @@ int dispatch_add_event(int slot, char* uid) {
 }
 
 int dispatch_remove_event(int slot) {
-    printf("FOB REMOVED : SLOT #%d\n", slot);
+    printf("FOB REMOVED: SLOT #%d\n", slot);
     fflush(stdout);
     return 0;
 }

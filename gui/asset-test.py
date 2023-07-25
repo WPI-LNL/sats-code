@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+
+# Simple test for NeoPixels & Wiegand
+import time
+import board
+import neopixel
+import digitalio
+from wiegand_interface import Wiegand_Interface
+
+# Choose an open pin connected to the Data In of the NeoPixel strip, i.e. board.D18
+# NeoPixels must be connected to D10, D12, D18 or D21 to work.
+pixel_pin = board.D10
+row_select_pins = [board.D0, board.D9, board.D11, board.D5]
+row_digitalio_pins = [digitalio.DigitalInOut(pin) for pin in row_select_pins]
+for pin in row_digitalio_pins:
+    pin.direction = digitalio.Direction.OUTPUT
+    pin.value = False
+
+row_digitalio_pins[0].value = True
+
+# The number of NeoPixels
+num_pixels = 6
+
+# The order of the pixel colors - RGB or GRB. Some NeoPixels have red and green reversed!
+# For RGBW NeoPixels, simply change the ORDER to RGBW or GRBW.
+ORDER = neopixel.RGB
+
+pixels = neopixel.NeoPixel(
+    pixel_pin, num_pixels, brightness=0.2, auto_write=False, pixel_order=ORDER
+)
+
+pixels.fill((0, 0, 0))
+pixels.show()
+
+def _callback(num):
+    temp_pixels = pixels[:]
+    for _ in range(3):
+        pixels.fill((0, 0, 255))
+        pixels.show()
+        time.sleep(0.1)
+        pixels.fill((0, 0, 0))
+        pixels.show()
+        time.sleep(0.1)
+    pixels = temp_pixels[:]
+    pixels.show()
+
+
+reader = Wiegand_Interface(_callback)
+
+
+while True:
+    # Comment this line out if you have RGBW/GRBW NeoPixels
+    pixels.fill((255, 0, 0))
+    # Uncomment this line if you have RGBW/GRBW NeoPixels
+    # pixels.fill((255, 0, 0, 0))
+    pixels.show()
+    time.sleep(1)
+
+    # Comment this line out if you have RGBW/GRBW NeoPixels
+    pixels.fill((0, 255, 0))
+    # Uncomment this line if you have RGBW/GRBW NeoPixels
+    # pixels.fill((0, 255, 0, 0))
+    pixels.show()
+    time.sleep(1)
+
+    # Comment this line out if you have RGBW/GRBW NeoPixels
+    pixels.fill((0, 0, 255))
+    # Uncomment this line if you have RGBW/GRBW NeoPixels
+    # pixels.fill((0, 0, 255, 0))
+    pixels.show()
+    time.sleep(1)
+    
+    # Comment this line out if you have RGBW/GRBW NeoPixels
+    pixels.fill((0, 0, 0))
+    # Uncomment this line if you have RGBW/GRBW NeoPixels
+    # pixels.fill((0, 0, 255, 0))
+    pixels.show()
+    time.sleep(1)
+
+    #rainbow_cycle(0.001)  # rainbow cycle with 1ms delay per step
+    import subprocess
+    decoder = {"00003e09a09d": (255, 0, 0), "00003e088796": (0, 255, 0), "00003e0852fd": (250, 100, 0), "00003e08136c": (0, 0, 255), "00003e09aff6": (255, 255, 0)}
+    p = subprocess.Popen(["sudo", "/home/pi/hacka-code/1wire/1wire"], stdout = subprocess.PIPE)
+    while True:
+        output_str = p.stdout.readline().decode('utf-8')
+        #print(output_str)
+        if "FOB ADDED" in output_str:
+            i = int(output_str.split("#")[1].split(",")[0])
+            if "2d-" in output_str:
+                print(f"Inserted @ {i} : {decoder[output_str.strip().split('2d-')[1].strip()]} | {output_str.strip().split('2d-')[1].strip()}")
+                pixels[i] = (128, 128, 0)
+                pixels.show()
+                time.sleep(0.25)
+                pixels[i] = (0, 128, 0)
+                pixels.show()
+                
+        if "FOB REMOVED" in output_str:
+            i = int(output_str.split("#")[1].split(",")[0])
+            pixels[i] = (128, 0, 0)
+            pixels.show()
+            time.sleep(0.25)
+            pixels[i] = (0, 0, 0)
+            pixels.show()
+        
+
+
